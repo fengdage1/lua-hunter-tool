@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: hunter tool
+## Notes: This is a hunter tool
+## Notes-zhCN: This is a hunter tool. 
+## Author: voodoodog
+## DefaultState: Enabled 
+hunter_tool.xml
+hunter_tool.lua
