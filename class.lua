@@ -1,20 +1,6 @@
-function thetest()
-	DEFAULT_CHAT_FRAME:AddMessage(CheckInteractDistance("target", 4))
-end
-shot2 = {
-	["Warrior"] =  shotWarrior,
-	["Hunter"] = shotHunter,
-	["Rogue"] = shotRogue,
-	["Priest"] = shotPriest,
-	["Shaman"] = shotShaman,
-	["Mage"] = shotMage,
-	["Warlock"] = shotWarlock,
-	["Druid"] = shotDruid,
-	["Others"] = shotOthers,
-}
-
 shot = {
 	["Others"] = function()
+		PetFuck()
 		if range == 10 and targetDebuffs["Hunter's Mark"] == false and pveMask then
 			CastSpellByName("Hunter's Mark")
 		elseif pveSting and GetTime()>dotEndTime["Serpent Sting"] and targetDebuffs["Serpent Sting"] == false then
@@ -54,7 +40,7 @@ shot = {
 		end
 	end,
 	["Rogue"] = function()
-		PetAttack()
+		PetFuck()
 		if not moving and spellCooldown["Multi-Shot"] then
 			CastSpellByName("Multi-Shot")
 		elseif range>2 and GetTime()+5>dotEndTime["Serpent Sting"]then
@@ -70,7 +56,7 @@ shot = {
 		end
 	end,
 	["Hunter"] = function()
-		PetAttack()
+		PetFuck()
 		if moving==true and spellCooldown["Concussive Shot"] and not targetDebuffs["Wing Clip"] then
 			CastSpellByName("Concussive Shot")
 		elseif not moving and spellCooldown["Multi-Shot"] then
@@ -86,7 +72,7 @@ shot = {
 		end
 	end,
 	["Mage"] = function()
-		PetAttack()
+		PetFuck()
 		if moving==true and spellCooldown["Concussive Shot"] and not targetDebuffs["Wing Clip"] then
 			CastSpellByName("Concussive Shot")
 		elseif not moving and spellCooldown["Multi-Shot"] then
@@ -102,7 +88,7 @@ shot = {
 		end
 	end,
 	["Priest"] = function()
-		PetAttack()
+		PetFuck()
 		if moving==true and spellCooldown["Concussive Shot"] and not targetDebuffs["Wing Clip"] then
 			CastSpellByName("Concussive Shot")
 		elseif not moving and spellCooldown["Multi-Shot"] then
@@ -118,7 +104,8 @@ shot = {
 		end
 	end,
 	["Shaman"]=function()
-		PetAttack()
+		PetFuck()
+		TargetByName("Grounding Totem",1)
 		if moving==true and spellCooldown["Concussive Shot"] and not targetDebuffs["Wing Clip"] then
 			CastSpellByName("Concussive Shot")
 		elseif not moving and spellCooldown["Multi-Shot"] then
@@ -134,7 +121,7 @@ shot = {
 		end
 	end,
 	["Warlock"]=function()
-		PetAttack()
+		PetFuck()
 		if moving==true and spellCooldown["Concussive Shot"] and not targetDebuffs["Wing Clip"] then
 			CastSpellByName("Concussive Shot")
 		elseif not moving and spellCooldown["Multi-Shot"] then
@@ -150,7 +137,7 @@ shot = {
 		end
 	end,
 	["Druid"]=function()
-		PetAttack()
+		PetFuck()
 		if moving==true and spellCooldown["Concussive Shot"] and not targetDebuffs["Wing Clip"] then
 			CastSpellByName("Concussive Shot")
 		elseif not moving and spellCooldown["Multi-Shot"] then
@@ -166,3 +153,14 @@ shot = {
 		end
 	end,
 }
+
+function PetFuck()
+	for i=1,6,1 do
+		local icon=UnitBuff("pet",i)
+		if icon == "Interface\\Icons\\Ability_Druid_SupriseAttack" then
+			CastSpellByName("Prowl")
+			break
+		end
+	end
+	PetAttack()
+end

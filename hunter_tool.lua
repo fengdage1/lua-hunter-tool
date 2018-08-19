@@ -1,6 +1,3 @@
-function testCommand(cmd)
-	thetest()
-end
 pveSting = false
 pveMask = true
 arcaneShot = true
@@ -18,12 +15,17 @@ spellFrameColor = 0
 spellFrameColorFlag = 0
 autoShotOffsetTime = 0.3
 playerName=""
+flashSpellFrameMinWidth = 50
+flashSpellFrameMinHight = 50
+flashSpellFrameMaxWidth = 300
+flashSpellFrameMaxHight = 300
 --/script TargetByName("鲁伯斯",1);if not UnitAffectingCombat("player") then CastSpellByName("驯服野兽");end;if UnitExists("pet") then Logout();end;
 --TargetByName
 --SpellStopCasting
 spellMana={
 	["Serpent Sting"]= 225,
 	["Viper Sting"]=210,
+	["Concussive Shot"] = 134,
 }
 dotEndTime={
 	["Serpent Sting"]= 0,
@@ -94,7 +96,9 @@ playerBuffs={
 	["Aspect of the Monkey"] = false,
 }
 
-
+function testCommand(cmd)
+	SpellStopCasting()
+end
 function showplayerCommand(cmd)
 	DEFAULT_CHAT_FRAME:AddMessage(playerName)
 end
@@ -106,29 +110,25 @@ function targetplayerCommand(cmd)
 	TargetByName(playerName,1)
 end
 
-function toggleCommand(cmd)
-	if attackMode == 0 then
-		attack = pvp
-		attackMode = 1
-		DEFAULT_CHAT_FRAME:AddMessage("toggle pvp")
-	elseif attackMode == 1 then
-		attack = pve
-		attackMode = 0
-		DEFAULT_CHAT_FRAME:AddMessage("toggle pve")
-	end
+function huizhangCommand(cmd)
+	--local a,b = GetInventoryItemCooldown("player",13)
+	--if GetInventoryItemTexture("player",13) == "Interface\\Icons\\INV_Jewelry_TrinketPVP_01" then
+	--DEFAULT_CHAT_FRAME:AddMessage("huizhang")
+	--end
+	--UseInventoryItem(13)
 end
 function trapCommand(cmd)
 	PetFollow()
+	ClearTarget()
 	if(UnitAffectingCombat("player")==1) then 
 		CastSpellByName("Feign Death") 
 	else 
-		CastSpellByName("Freezing Trap")
+		CastSpellByName(cmd)
 		if checkbuffExisting("player","Shadowmeld",checkPlayerBuffNum) == false then
 			CastSpellByName("Shadowmeld")
 		end
 	end
 	--PetFollow()
-	ClearTarget()
 	TargetLastTarget()
 end
 function aspectCommand(cmd)
@@ -202,51 +202,52 @@ function onLoad()
 	SlashCmdList["TARGETPLAYER"] = targetplayerCommand
 	SLASH_TEST1 = "/test"
 	SlashCmdList["TEST"] = testCommand
-	SLASH_TOGGLE1 = "/toggle"
-	SlashCmdList["TOGGLE"] = toggleCommand
+	SLASH_HUIZHANG1 = "/huizhang"
+	SlashCmdList["HUIZHANG"] = huizhangCommand
 	SLASH_ASPECT1 = "/aspect"
 	SlashCmdList["ASPECT"] = aspectCommand
 	SLASH_TRAP1 = "/trap"
 	SlashCmdList["TRAP"] = trapCommand
 	SLASH_ATTACK1 = "/attack"
 	SlashCmdList["ATTACK"] = attackCommand
-	--
-	--[[this:RegisterEvent("VARIABLES_LOADED");
-	this:RegisterEvent("SPELLS_CHANGED");
-	this:RegisterEvent("CHARACTER_POINTS_CHANGED");
-	this:RegisterEvent("PLAYER_ALIVE");
-	this:RegisterEvent("UNIT_AURA");
-	this:RegisterEvent("PLAYER_TARGET_CHANGED");
-	this:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_OTHER");
-	this:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_SELF");
-	this:RegisterEvent("CHAT_MSG_COMBAT_HOSTILE_DEATH");
-	this:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS");
-	this:RegisterEvent("CHAT_MSG_SPELL_PET_DAMAGE");
-	this:RegisterEvent("CHAT_MSG_MONSTER_EMOTE");
-	this:RegisterEvent("START_AUTOREPEAT_SPELL");
-	this:RegisterEvent("STOP_AUTOREPEAT_SPELL");
-	this:RegisterEvent("SPELLCAST_START");
-	this:RegisterEvent("SPELLCAST_STOP");
-	this:RegisterEvent("SPELLCAST_FAILED");
-	--]]
-	--this:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE");
-	--this:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_HOSTILEPLAYER_DAMAGE");
-	--this:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE");
-	--this:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-	--this:RegisterEvent("ZONE_CHANGED_INDOORS")
-	--this:RegisterEvent("START_AUTOREPEAT_SPELL")
-	--
+	---
 	createRangeSight()
 	--
 	createZoonEventFrame()
 	--
 	createAutoShotEventFrame()
 	--
+	--createFlashConcussiveFrame()
+	--
 	UIErrorsFrame:Hide()
 	--
 	DEFAULT_CHAT_FRAME:AddMessage("hunter tool is Loaded")
 	DEFAULT_CHAT_FRAME:AddMessage("author voodoodog")
 end 
+
+function createFlashConcussiveFrame()
+--Concussive Shot
+	concussiveFrame=CreateFrame("frame","concussiveFrame", UIParent)
+	concussiveFrame:SetWidth(flashSpellFrameMinWidth) 
+	concussiveFrame:SetHeight(flashSpellFrameMinHight)
+	concussiveFrame:SetPoint("CENTER", UIParent, "CENTER",0, 50)
+	concussiveFrame.texture = concussiveFrame:CreateTexture()
+	concussiveFrame.texture:SetAllPoints(concussiveFrame)
+	concussiveFrame.texture:SetTexture("Interface\\Icons\\Spell_Frost_Stun")
+	concussiveFrame:Hide()
+	concussiveFrame:SetScript("OnUpdate",concussiveUpdate)
+	concussiveFrame:SetAlpha(0.2)
+end
+
+function concussiveUpdate()
+	width = this:GetWidth()
+	height = this:GetHeight()
+	if width>flashSpellFrameMaxWidth then
+		this:Hide()
+	end
+	this:SetWidth(width+10) 
+	this:SetHeight(height+10)
+end
 
 function onZoonEvent()
 	DEFAULT_CHAT_FRAME:AddMessage("zoon")
@@ -527,6 +528,7 @@ end
 
 function attack()
 	if not UnitExists("target") or UnitIsFriend("player", "target")then
+		SpellStopCasting()
 		TargetLastEnemy()
 		return
 	end 
@@ -552,7 +554,6 @@ function pvp()
 end
 
 function pve()
-	PetAttack()
 	shot["Others"]()
 end
 
@@ -585,6 +586,10 @@ function spellFrameUpdate()
 			dotEndTime["Serpent Sting"] = GetTime()+dotDuration["Serpent Sting"]
 		elseif mana - curMana == spellMana["Viper Sting"] then
 			dotEndTime["Viper Sting"] = GetTime()+dotDuration["Viper Sting"]
+		elseif mana - curMana == spellMana["Concussive Shot"] then
+			concussiveFrame:SetWidth(flashSpellFrameMinWidth)
+			concussiveFrame:SetHeight(flashSpellFrameMinHight)
+			concussiveFrame:Show()
 		end
 		mana = curMana
 	end
