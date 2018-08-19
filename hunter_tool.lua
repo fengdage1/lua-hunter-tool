@@ -1,4 +1,8 @@
-pveSting = true
+function testCommand(cmd)
+	thetest()
+end
+pveSting = false
+pveMask = true
 arcaneShot = true
 mana = UnitMana("player")
 markSlot=66
@@ -10,17 +14,25 @@ moving = false
 startAutoShot = false
 gcdStartTime = 0
 autoShotTime = 0
-
-
+spellFrameColor = 0
+spellFrameColorFlag = 0
+autoShotOffsetTime = 0.3
+playerName=""
+--/script TargetByName("鲁伯斯",1);if not UnitAffectingCombat("player") then CastSpellByName("驯服野兽");end;if UnitExists("pet") then Logout();end;
+--TargetByName
+--SpellStopCasting
 spellMana={
-	["Serpent Sting"]= 50
+	["Serpent Sting"]= 225,
+	["Viper Sting"]=210,
 }
 dotEndTime={
-	["Serpent Sting"]= 0
+	["Serpent Sting"]= 0,
+	["Viper Sting"]=0,
 }
 
 dotDuration={
-	["Serpent Sting"]= 15
+	["Serpent Sting"]= 15,
+	["Viper Sting"] = 8,
 }
 	
 spellSlots={
@@ -29,7 +41,9 @@ spellSlots={
 	["Wing Clip"]=64,
 	["Mongoose Bite"]=65,
 	["Multi-Shot"]=67,
-	["Arcane Shot"]=68
+	["Arcane Shot"]=68,
+	["Rapid Fire"]=69,
+	["Concussive Shot"]=70,
 }
 
 spellCooldown={
@@ -39,57 +53,57 @@ spellCooldown={
 	["Mongoose Bite"]=false,
 	["Multi-Shot"]=false,
 	["Arcane Shot"]=false,
+	["Rapid Fire"]=false,
+	["Concussive Shot"]=false,
 }
-
 spellIcons={
 	["Hunter's Mark"]="Interface\\Icons\\Ability_Hunter_SniperShot",
 	["Serpent Sting"]="Interface\\Icons\\Ability_Hunter_Quickshot",
+	["Scorpid Sting"]="Interface\\Icons\\Ability_Hunter_CriticalShot",
+	["Viper Sting"]="Interface\\Icons\\Ability_Hunter_AimedShot",
 	["Wing Clip"] = "Interface\\Icons\\Ability_Rogue_Trip",
 	["Aspect of the Cheetah"] = "Interface\\Icons\\Ability_Mount_JungleTiger",
 	["Aspect of the Hawk"] = "Interface\\Icons\\Spell_Nature_RavenForm",
 	["Aspect of the Monkey"] = "Interface\\Icons\\Ability_Hunter_AspectOfTheMonkey",
+	["Shadowmeld"] = "Interface\\Icons\\Ability_Ambush"
 }
 
 iconSpells={
 	["Interface\\Icons\\Ability_Hunter_SniperShot"] = "Hunter's Mark",
 	["Interface\\Icons\\Ability_Hunter_Quickshot"] = "Serpent Sting",
+	["Interface\\Icons\\Ability_Hunter_CriticalShot"]="Scorpid Sting",
+	["Interface\\Icons\\Ability_Hunter_AimedShot"]="Viper Sting",
 	["Interface\\Icons\\Ability_Rogue_Trip"] = "Wing Clip",
 	["Interface\\Icons\\Ability_Hunter_AspectOfTheMonkey"] = "Aspect of the Monkey",
 	["Interface\\Icons\\Spell_Nature_RavenForm"] = "Aspect of the Hawk",
 	["Interface\\Icons\\Ability_Mount_JungleTiger"] = "Aspect of the Cheetah",
+	["Interface\\Icons\\Ability_Ambush"] = "Shadowmeld",
 }
 
 targetDebuffs={
 	["Hunter's Mark"] = false,
 	["Wing Clip"] = false,
 	["Serpent Sting"] = false,
+	["Scorpid Sting"] = false,
+	["Viper Sting"] = false,
 }
 
 playerBuffs={
 	["Aspect of the Cheetah"] = false,
 	["Aspect of the Hawk"] = false,
-	["Aspect of the Monkey"] = false
+	["Aspect of the Monkey"] = false,
 }
 
-spells={
-	["othersIndex"]={
-		"Serpent Sting",
-		"Auto Shot",
-		"Multi-Shot",
-		"Arcane Shot",
-		"miaozhun",
-	},
-	["others"]={
-		["Serpent Sting"] = false,
-		["Auto Shot"] = false,
-		["Multi-Shot"] = false,
-		["Arcane Shot"] = false,
-		["miaozhun"] = false,
-	},
-}
 
-function testCommand(cmd)
-	DEFAULT_CHAT_FRAME:AddMessage(UnitRangedDamage("player"))
+function showplayerCommand(cmd)
+	DEFAULT_CHAT_FRAME:AddMessage(playerName)
+end
+function setplayerCommand(cmd)
+	playerName = cmd
+	DEFAULT_CHAT_FRAME:AddMessage("set player name:"..cmd)
+end
+function targetplayerCommand(cmd)
+	TargetByName(playerName,1)
 end
 
 function toggleCommand(cmd)
@@ -103,7 +117,20 @@ function toggleCommand(cmd)
 		DEFAULT_CHAT_FRAME:AddMessage("toggle pve")
 	end
 end
-
+function trapCommand(cmd)
+	PetFollow()
+	if(UnitAffectingCombat("player")==1) then 
+		CastSpellByName("Feign Death") 
+	else 
+		CastSpellByName("Freezing Trap")
+		if checkbuffExisting("player","Shadowmeld",checkPlayerBuffNum) == false then
+			CastSpellByName("Shadowmeld")
+		end
+	end
+	--PetFollow()
+	ClearTarget()
+	TargetLastTarget()
+end
 function aspectCommand(cmd)
 	updatePlayerBuff(checkPlayerBuffNum)
 	if UnitIsPlayer("target") and UnitIsEnemy("player","target") then
@@ -153,8 +180,8 @@ function onLoad()
 	sightY = 150
 	spellframeX = 0
 	spellframeY = 150
-	spellFrameWidth = 9
-	spellFrameHeight = 12
+	spellFrameWidth = 12
+	spellFrameHeight = 16
 	attackMode = 0
 	range=0
 	--
@@ -167,12 +194,20 @@ function onLoad()
 	spellFrame.texture:SetTexture(1,1,1)
 	spellFrame:SetPoint("CENTER", UIParent, "CENTER",spellframeX, spellframeY)
 	--
+	SLASH_SHOWPLAYER1 = "/showplayer"
+	SlashCmdList["SHOWPLAYER"] = showplayerCommand
+	SLASH_SETPLAYER1 = "/setplayer"
+	SlashCmdList["SETPLAYER"] = setplayerCommand
+	SLASH_TARGETPLAYER1 = "/targetplayer"
+	SlashCmdList["TARGETPLAYER"] = targetplayerCommand
 	SLASH_TEST1 = "/test"
 	SlashCmdList["TEST"] = testCommand
 	SLASH_TOGGLE1 = "/toggle"
 	SlashCmdList["TOGGLE"] = toggleCommand
 	SLASH_ASPECT1 = "/aspect"
 	SlashCmdList["ASPECT"] = aspectCommand
+	SLASH_TRAP1 = "/trap"
+	SlashCmdList["TRAP"] = trapCommand
 	SLASH_ATTACK1 = "/attack"
 	SlashCmdList["ATTACK"] = attackCommand
 	--
@@ -207,8 +242,9 @@ function onLoad()
 	--
 	createAutoShotEventFrame()
 	--
-	UIErrorsFrame:Hide() 
-	DEFAULT_CHAT_FRAME:AddMessage("hunter tool is Loaded,default mode is pve")
+	UIErrorsFrame:Hide()
+	--
+	DEFAULT_CHAT_FRAME:AddMessage("hunter tool is Loaded")
 	DEFAULT_CHAT_FRAME:AddMessage("author voodoodog")
 end 
 
@@ -348,13 +384,25 @@ function setSightRed()
 end
 
 function setSpellFrameColor(flag)
-	if flag == 1 then
+	--[[if flag == 1 then
 		spellFrame.texture:SetTexture(0,1,0)
 	elseif flag == 2 then
 		spellFrame.texture:SetTexture(1,1,0)
 	elseif flag == 3 then
 		spellFrame.texture:SetTexture(1,0,0)
-	else
+	elseif flag == 5 then
+		spellFrame.texture:SetTexture(1,1,1)]]
+	if spellFrameColorFlag > flag then
+		if spellFrameColor == 0 then
+			spellFrame.texture:SetTexture(0,0,1)
+			spellFrameColor = 1
+		else
+			spellFrame.texture:SetTexture(1,1,1)
+			spellFrameColor = 0
+		end	
+	end
+	spellFrameColorFlag = flag
+	if flag == 0 then
 		hideSpellFrame()
 		return
 	end
@@ -364,6 +412,8 @@ end
 function setSightByRange()
 	if range == 5 then
 		setSightGreen()
+	elseif range == 3 then
+		setSightYellow()
 	else
 		setSightRed()
 	end
@@ -372,8 +422,10 @@ end
 function updateRange()
 	if IsActionInRange(spellSlots["Wing Clip"]) == 1 then
 		range=0
-	elseif CheckInteractDistance("target", 1) == 1 then 
+	elseif CheckInteractDistance("target", 2) == 1 then
 		range=1
+	elseif IsActionInRange(1) == 1 then 
+		range=3
 	elseif IsActionInRange(spellSlots["Auto Shot"]) == 1 then
 		range=5
 	else
@@ -391,7 +443,15 @@ function updateCooldown()
 		else
 			spellCooldown[k]=false
 		end
-	end 
+	end
+	local flag=0
+	if spellCooldown["Multi-Shot"] then
+		flag = flag+1
+	end
+	if GetTime()- autoShotTime > UnitRangedDamage("player") then
+		flag = flag+1
+	end
+	setSpellFrameColor(flag)
 end
 
 function updateTargetDebuff(unit,debuffCnt)
@@ -427,6 +487,22 @@ function checkDebuffExisting(unit,debuff,debuffCnt)
 	return false
 end
 
+function checkbuffExisting(unit,buff,buffCnt)
+	for i=1,buffCnt,1 do
+		if spellIcons[buff] == UnitBuff(unit,i) then
+			return true
+		end
+	end
+	return false
+end
+
+function checkAutoShot()
+	if GetTime()- autoShotTime > UnitRangedDamage("player") - autoShotOffsetTime then
+		return true
+	end
+	return false
+end
+
 function isInGcd()
 	local _,d = GetActionCooldown(markSlot)
 	if d==1.5 then
@@ -449,87 +525,46 @@ function melee()
 	end
 end
 
-function shoot(class)
-	local index = class.."Index"
-	for i = 1, table.getn(spells[index]) do
-		local spellName = spells[index][i]
-        if spells[class][spellName] == true then
-			CastSpellByName(spellName)
-		end
-    end  
-end
-
 function attack()
-	if UnitIsDead("target") or UnitIsFriend("player", "target")then
+	if not UnitExists("target") or UnitIsFriend("player", "target")then
+		TargetLastEnemy()
 		return
 	end 
-	if UnitIsPlayer("target") then
-		pve()
+	if range == 0 then
+		melee()
 	else
-		pve()
+		if UnitIsPlayer("target") then
+			pvp()
+		else
+			pve()
+		end
 	end
 end
 
 function pvp()
-	DEFAULT_CHAT_FRAME:AddMessage(CheckInteractDistance("unit", distIndex))
+	if range == 10 and not targetDebuffs["Hunter's Mark"] then
+		CastSpellByName("Hunter's Mark")
+	elseif range ~= 10 and spellCooldown["Rapid Fire"] then
+		CastSpellByName("Rapid Fire")
+	end
+	local class = UnitClass("target")
+	shot[class]()
 end
 
 function pve()
 	PetAttack()
-	if range > 0 and targetDebuffs["Hunter's Mark"] == false then
-			CastSpellByName("Hunter's Mark")
-	end	
-	if range >1 then
-		shoot("others")
-	elseif range == 0 then
-		melee()
-	end
+	shot["Others"]()
 end
 
-function updateSpells()
-	if UnitIsPlayer("target") then
-		local class = UnitClass("target")
-		updateSpellsToPlayers(class)
-	else 
-		updateSpellsToOthers()
-	end
-end
-
-function updateSpellsToPlayers(class)
-end
-
-function updateSpellsToOthers()
-	for k,v in pairs(spells["others"]) do
-		spells["others"][k]=false
-	end
-	if pveSting and GetTime()>dotEndTime["Serpent Sting"] and targetDebuffs["Serpent Sting"] == false then
-		spells["others"]["Serpent Sting"] = true
-	elseif not IsAutoRepeatAction(spellSlots["Auto Shot"]) then
-		spells["others"]["Auto Shot"] = true
-	elseif moving == false and spellCooldown["Multi-Shot"] then
-		spells["others"]["Multi-Shot"] = true
-	elseif spellCooldown["Arcane Shot"] then
-		if arcaneShot then
-			spells["others"]["Arcane Shot"] = true
-		else 
-			spells["others"]["miaozhun"] = true
-		end
-	end
-	local movingSpell,standingSpell = 0,0
-	if spells["others"]["Serpent Sting"] or spellCooldown["Arcane Shot"] then
-		movingSpell = 1
-	end
-	if spellCooldown["Multi-Shot"] or GetTime()- autoShotTime > UnitRangedDamage("player") then
-		standingSpell = 2
-	end
-	setSpellFrameColor(movingSpell + standingSpell)
-end 
 
 function spellFrameUpdate()
 	if(not UnitExists("target")) or UnitIsFriend("player", "target")then
 		hideSight()
 		hideSpellFrame()
 	else
+		if UnitIsPlayer("target") then
+			playerName=UnitName("target")
+		end
 		local curPosX, curPosY = GetPlayerMapPosition("player");
 		if curPosX ~= posX or curPosY ~= posY then
 			moving = true
@@ -542,14 +577,14 @@ function spellFrameUpdate()
 		setSightByRange()
 		updateTargetDebuff("target",checkTargetDebuffNum)
 		updateCooldown()
-		updateSpells()
 		--
-		--showSpellFrame()
 		showSight()
 		--
 		local curMana = UnitMana("player")
 		if mana - curMana == spellMana["Serpent Sting"] then
 			dotEndTime["Serpent Sting"] = GetTime()+dotDuration["Serpent Sting"]
+		elseif mana - curMana == spellMana["Viper Sting"] then
+			dotEndTime["Viper Sting"] = GetTime()+dotDuration["Viper Sting"]
 		end
 		mana = curMana
 	end

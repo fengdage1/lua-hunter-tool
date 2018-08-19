@@ -6,3 +6,4 @@
 ## DefaultState: Enabled 
 hunter_tool.xml
 hunter_tool.lua
+class.lua
