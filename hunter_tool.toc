@@ -2,7 +2,7 @@
 ## Title: hunter tool
 ## Notes: This is a hunter tool
 ## Notes-zhCN: This is a hunter tool. 
-## Author: voodoodog
+## Author: fengdage
 ## DefaultState: Enabled 
 hunter_tool.xml
 class.lua
