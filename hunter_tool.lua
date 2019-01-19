@@ -1,9 +1,13 @@
 pveSting = false
-pveMask = true
+pveMulti=true
+pveMask = false
 arcaneShot = true
+autoDeath = false
 mana = UnitMana("player")
 markSlot=66
-checkPlayerBuffNum = 8
+flareSlot = 50
+checkPlayerBuffNum = 16
+checkPlayerDebuffNum = 8
 checkTargetDebuffNum = 8
 posX = 0
 posY = 0
@@ -12,20 +16,21 @@ startAutoShot = false
 gcdStartTime = 0
 autoShotTime = 0
 spellFrameColor = 0
-spellFrameColorFlag = 0
 autoShotOffsetTime = 0.3
 playerName=""
-flashSpellFrameMinWidth = 50
-flashSpellFrameMinHight = 50
-flashSpellFrameMaxWidth = 300
-flashSpellFrameMaxHight = 300
---/script TargetByName("鲁伯斯",1);if not UnitAffectingCombat("player") then CastSpellByName("驯服野兽");end;if UnitExists("pet") then Logout();end;
+playerClass=""
+flashSpellFrameMinWidth = 45
+flashSpellFrameMinHight = 45
+autoFlag = false
+PetFuck=PetSlay
+--/script TargetByName("Lupos",1);if not UnitAffectingCombat("player") then CastSpellByName("Tame Beast");end;if UnitExists("pet") then Logout();end;
 --TargetByName
 --SpellStopCasting
+--/script if not buffed("Ice Block", 'player') then cast("Ice Block") end
 spellMana={
-	["Serpent Sting"]= 225,
-	["Viper Sting"]=210,
-	["Concussive Shot"] = 134,
+	["Serpent Sting"]= 207,
+	["Viper Sting"]=193,
+	["Concussive Shot"] = 123,
 }
 dotEndTime={
 	["Serpent Sting"]= 0,
@@ -46,6 +51,8 @@ spellSlots={
 	["Arcane Shot"]=68,
 	["Rapid Fire"]=69,
 	["Concussive Shot"]=70,
+	["Flare"]=50,
+	["Feign Death"]=51,
 }
 
 spellCooldown={
@@ -57,6 +64,8 @@ spellCooldown={
 	["Arcane Shot"]=false,
 	["Rapid Fire"]=false,
 	["Concussive Shot"]=false,
+	["Flare"]=false,
+	["Feign Death"]=false,
 }
 spellIcons={
 	["Hunter's Mark"]="Interface\\Icons\\Ability_Hunter_SniperShot",
@@ -67,7 +76,12 @@ spellIcons={
 	["Aspect of the Cheetah"] = "Interface\\Icons\\Ability_Mount_JungleTiger",
 	["Aspect of the Hawk"] = "Interface\\Icons\\Spell_Nature_RavenForm",
 	["Aspect of the Monkey"] = "Interface\\Icons\\Ability_Hunter_AspectOfTheMonkey",
-	["Shadowmeld"] = "Interface\\Icons\\Ability_Ambush"
+	["Shadowmeld"] = "Interface\\Icons\\Ability_Ambush",
+	["Cheap"] = "Interface\\Icons\\Ability_CheapShot",
+	["Kidney"] = "Interface\\Icons\\Spell_Shadow_LifeDrain",
+	["Scatter Shot"] = "Interface\\Icons\\Ability_GolemStormBolt",
+	["Concussive Shot"] = "Interface\\Icons\\Spell_Frost_Stun",
+	["Feign Death"]="Interface\\Icons\\Ability_Rogue_FeignDeath",
 }
 
 iconSpells={
@@ -80,24 +94,29 @@ iconSpells={
 	["Interface\\Icons\\Spell_Nature_RavenForm"] = "Aspect of the Hawk",
 	["Interface\\Icons\\Ability_Mount_JungleTiger"] = "Aspect of the Cheetah",
 	["Interface\\Icons\\Ability_Ambush"] = "Shadowmeld",
+	["Interface\\Icons\\Ability_CheapShot"] = "Cheap",
+	["Interface\\Icons\\Spell_Shadow_LifeDrain"] = "Kidney",
+	["Interface\\Icons\\Ability_GolemStormBolt"] = "Scatter Shot",
+	["Interface\\Icons\\Spell_Frost_Stun"] = "Concussive Shot",
+	["Interface\\Icons\\Ability_Rogue_FeignDeath"]="Feign Death",
 }
 
 targetDebuffs={
-	["Hunter's Mark"] = false,
-	["Wing Clip"] = false,
-	["Serpent Sting"] = false,
-	["Scorpid Sting"] = false,
-	["Viper Sting"] = false,
+
 }
 
 playerBuffs={
-	["Aspect of the Cheetah"] = false,
-	["Aspect of the Hawk"] = false,
-	["Aspect of the Monkey"] = false,
+
+}
+
+playerDebuffs={
+
 }
 
 function testCommand(cmd)
-	SpellStopCasting()
+	if isPlayerBuffExist("Feign Death") == false then
+		DEFAULT_CHAT_FRAME:AddMessage("haha")
+	end
 end
 function showplayerCommand(cmd)
 	DEFAULT_CHAT_FRAME:AddMessage(playerName)
@@ -111,45 +130,114 @@ function targetplayerCommand(cmd)
 end
 
 function huizhangCommand(cmd)
-	--local a,b = GetInventoryItemCooldown("player",13)
-	--if GetInventoryItemTexture("player",13) == "Interface\\Icons\\INV_Jewelry_TrinketPVP_01" then
-	--DEFAULT_CHAT_FRAME:AddMessage("huizhang")
-	--end
-	--UseInventoryItem(13)
+	PetPassiveMode()
+	CastSpellByName("Scatter Shot")
+	if isPlayerDebuffExist("Kidney") or isPlayerDebuffExist("Cheap") then
+		if GetInventoryItemTexture("player",13) == "Interface\\Icons\\INV_Jewelry_TrinketPVP_01" and GetInventoryItemCooldown("player",13) ==0 then
+			UseInventoryItem(13)
+		end
+	end
 end
+
+function zhuazeiCommand(cmd)
+	if UnitExists("target") then
+		local class = UnitClass("target")
+		if class == "Rogue" then
+			if isTargetDebuffExist("Scatter Shot") == true then
+				PetPassiveMode()
+			else
+				PetFuck()
+			end
+			CastSpellByName("Scatter Shot")
+		else
+			SetCVar("targetNearestDistance",12)
+			ClearTarget()
+			TargetNearestEnemy()
+			SetCVar("targetNearestDistance",50)
+		end
+	else
+		SetCVar("targetNearestDistance",12)
+		ClearTarget()
+		TargetNearestEnemy()
+		SetCVar("targetNearestDistance",50)
+	end
+end
+
+function yingdunCommand(cmd)
+	if isPlayerBuffExist("Shadowmeld") == false then
+		CastSpellByName("Shadowmeld")
+	end
+end
+
+function flareCommand(cmd)
+	if not IsCurrentAction(spellSlots["Flare"])then
+		CastSpellByName("Flare")
+	end
+end
+
+function duochongkaiguanCommand(cmd)
+	if pveMulti == true then
+		pveMulti = false
+		DEFAULT_CHAT_FRAME:AddMessage("multi_shot is closed")
+	elseif pveMulti == false then
+		pveMulti = true
+		DEFAULT_CHAT_FRAME:AddMessage("multi_shot is opened")
+	end
+end
+
+function autodeathCommand(cmd)
+	if autoDeath == false then
+		autoDeath = true
+		DEFAULT_CHAT_FRAME:AddMessage("auto feign_death is opened")
+	elseif autoDeath == true then
+		autoDeath = false
+		DEFAULT_CHAT_FRAME:AddMessage("auto feign_death is closed")
+	end
+end
+
 function trapCommand(cmd)
-	PetFollow()
-	ClearTarget()
+	PetPassiveMode()
+	--ClearTarget()
 	if(UnitAffectingCombat("player")==1) then 
 		CastSpellByName("Feign Death") 
 	else 
 		CastSpellByName(cmd)
-		if checkbuffExisting("player","Shadowmeld",checkPlayerBuffNum) == false then
+		if isPlayerBuffExist("Shadowmeld") == false then
 			CastSpellByName("Shadowmeld")
 		end
 	end
 	--PetFollow()
-	TargetLastTarget()
+	--TargetLastTarget()
+end
+function petCommand(cmd)
+	if PetFuck == PetSlay then
+		PetFuck = function () end
+		DEFAULT_CHAT_FRAME:AddMessage("Pet Stop")
+	else
+		PetFuck = PetSlay
+		DEFAULT_CHAT_FRAME:AddMessage("Pet Fuck")
+	end
+end
+function petattackCommand(cmd)
+	PetSlay()
 end
 function aspectCommand(cmd)
-	updatePlayerBuff(checkPlayerBuffNum)
 	if UnitIsPlayer("target") and UnitIsEnemy("player","target") then
-		local class = UnitClass("target")
-		if class == "Mage" or class == "Priest" or class == "Warlock" or class == "Warrior" then
-			if playerBuffs["Aspect of the Cheetah"] == true then
+		if playerClass == "Mage" or playerClass == "Priest" or playerClass == "Warlock" or playerClass == "Warrior" then
+			if isPlayerBuffExist("Aspect of the Cheetah") == true then
 				CastSpellByName("Aspect of the Hawk")
 			else
 				CastSpellByName("Aspect of the Cheetah")
 			end
 		else
 			if range <2 then
-				if playerBuffs["Aspect of the Monkey"] == true then
+				if isPlayerBuffExist("Aspect of the Monkey") == true then
 					CastSpellByName("Aspect of the Cheetah")
 				else
 					CastSpellByName("Aspect of the Monkey")
 				end
 			else
-				if playerBuffs["Aspect of the Cheetah"] == true then
+				if isPlayerBuffExist("Aspect of the Cheetah") == true then
 					CastSpellByName("Aspect of the Hawk")
 				else
 					CastSpellByName("Aspect of the Cheetah")
@@ -157,7 +245,7 @@ function aspectCommand(cmd)
 			end
 		end
 	else
-		if playerBuffs["Aspect of the Cheetah"] == true then
+		if isPlayerBuffExist("Aspect of the Cheetah") == true then
 			CastSpellByName("Aspect of the Hawk")
 		else
 			CastSpellByName("Aspect of the Cheetah")
@@ -206,10 +294,24 @@ function onLoad()
 	SlashCmdList["HUIZHANG"] = huizhangCommand
 	SLASH_ASPECT1 = "/aspect"
 	SlashCmdList["ASPECT"] = aspectCommand
+	SLASH_PETATTACK1 = "/petattack"
+	SlashCmdList["PETATTACK"] = petattackCommand
 	SLASH_TRAP1 = "/trap"
 	SlashCmdList["TRAP"] = trapCommand
 	SLASH_ATTACK1 = "/attack"
 	SlashCmdList["ATTACK"] = attackCommand
+	SLASH_ZHUAZEI1 = "/zhuazei"
+	SlashCmdList["ZHUAZEI"] = zhuazeiCommand
+	SLASH_YINGDUN1 = "/yingdun"
+	SlashCmdList["YINGDUN"] = yingdunCommand
+	SLASH_PET1 = "/pet"
+	SlashCmdList["PET"] = petCommand
+	SLASH_FLARE1 = "/flare"
+	SlashCmdList["FLARE"] = flareCommand
+	SLASH_DUOCHONGKAIGUAN1 = "/duochongkaiguan"
+	SlashCmdList["DUOCHONGKAIGUAN"] = duochongkaiguanCommand
+	SLASH_AUTODEATH1 = "/autodeath"
+	SlashCmdList["AUTODEATH"] = autodeathCommand
 	---
 	createRangeSight()
 	--
@@ -217,7 +319,9 @@ function onLoad()
 	--
 	createAutoShotEventFrame()
 	--
-	--createFlashConcussiveFrame()
+	createFlashConcussiveFrame()
+	--
+	createScatterShotFrame()
 	--
 	UIErrorsFrame:Hide()
 	--
@@ -230,23 +334,33 @@ function createFlashConcussiveFrame()
 	concussiveFrame=CreateFrame("frame","concussiveFrame", UIParent)
 	concussiveFrame:SetWidth(flashSpellFrameMinWidth) 
 	concussiveFrame:SetHeight(flashSpellFrameMinHight)
-	concussiveFrame:SetPoint("CENTER", UIParent, "CENTER",0, 50)
+	concussiveFrame:SetPoint("CENTER", UIParent, "CENTER",0, 230)
 	concussiveFrame.texture = concussiveFrame:CreateTexture()
 	concussiveFrame.texture:SetAllPoints(concussiveFrame)
 	concussiveFrame.texture:SetTexture("Interface\\Icons\\Spell_Frost_Stun")
 	concussiveFrame:Hide()
-	concussiveFrame:SetScript("OnUpdate",concussiveUpdate)
-	concussiveFrame:SetAlpha(0.2)
+	concussiveFrame:SetAlpha(0.5)
 end
 
-function concussiveUpdate()
-	width = this:GetWidth()
-	height = this:GetHeight()
-	if width>flashSpellFrameMaxWidth then
-		this:Hide()
+function createScatterShotFrame()
+	scatterShotFrame=CreateFrame("frame","scatterShot", UIParent)
+	scatterShotFrame:SetWidth(flashSpellFrameMinWidth) 
+	scatterShotFrame:SetHeight(flashSpellFrameMinHight)
+	scatterShotFrame:SetPoint("CENTER", UIParent, "CENTER",0, 230)
+	scatterShotFrame.texture = scatterShotFrame:CreateTexture()
+	scatterShotFrame.texture:SetAllPoints(scatterShotFrame)
+	scatterShotFrame.texture:SetTexture("Interface\\Icons\\Ability_GolemStormBolt")
+	scatterShotFrame:Hide()
+	scatterShotFrame:SetScript("OnUpdate",scatterShotFrameUpdate)
+	scatterShotFrame:SetAlpha(0.3)
+end
+
+function scatterShotFrameUpdate()
+	if GetTime()-GetActionCooldown(markSlot)<0.7 then
+		scatterShotFrame:SetAlpha(0.3)
+	else
+		scatterShotFrame:SetAlpha(1)
 	end
-	this:SetWidth(width+10) 
-	this:SetHeight(height+10)
 end
 
 function onZoonEvent()
@@ -377,6 +491,13 @@ function setSightYellow()
 	bottomSight.texture:SetTexture(1,1,0)
 end
 
+function setSightOrange()
+	leftSight.texture:SetTexture(1,0.6,0)
+	rightSight.texture:SetTexture(1,0.6,0)
+	topSight.texture:SetTexture(1,0.6,0)
+	bottomSight.texture:SetTexture(1,0.6,0)
+end
+
 function setSightRed()
 	leftSight.texture:SetTexture(1,0,0)
 	rightSight.texture:SetTexture(1,0,0)
@@ -393,17 +514,11 @@ function setSpellFrameColor(flag)
 		spellFrame.texture:SetTexture(1,0,0)
 	elseif flag == 5 then
 		spellFrame.texture:SetTexture(1,1,1)]]
-	if spellFrameColorFlag > flag then
-		if spellFrameColor == 0 then
-			spellFrame.texture:SetTexture(0,0,1)
-			spellFrameColor = 1
-		else
-			spellFrame.texture:SetTexture(1,1,1)
-			spellFrameColor = 0
-		end	
-	end
-	spellFrameColorFlag = flag
-	if flag == 0 then
+	if flag == 2 then
+		spellFrame.texture:SetTexture(1,0,0)
+	elseif flag == 1 then
+		spellFrame.texture:SetTexture(0,1,0)
+	elseif flag == 0 then
 		hideSpellFrame()
 		return
 	end
@@ -411,24 +526,28 @@ function setSpellFrameColor(flag)
 end
 
 function setSightByRange()
-	if range == 5 then
-		setSightGreen()
+	if range < 2 or range == 10 then
+		setSightRed()
+	elseif range == 2 then 
+		setSightOrange()
 	elseif range == 3 then
 		setSightYellow()
-	else
-		setSightRed()
+	elseif range == 4 then
+		setSightGreen()
 	end
 end
 
 function updateRange()
 	if IsActionInRange(spellSlots["Wing Clip"]) == 1 then
 		range=0
-	elseif CheckInteractDistance("target", 2) == 1 then
+	elseif IsActionInRange(spellSlots["Auto Shot"]) ~= 1 and IsActionInRange(13) == 1then
 		range=1
+	elseif IsActionInRange(13) == 1 then 
+		range=2
 	elseif IsActionInRange(1) == 1 then 
 		range=3
 	elseif IsActionInRange(spellSlots["Auto Shot"]) == 1 then
-		range=5
+		range=4
 	else
 		range=10
 	end
@@ -447,36 +566,65 @@ function updateCooldown()
 	end
 	local flag=0
 	if spellCooldown["Multi-Shot"] then
-		flag = flag+1
-	end
-	if GetTime()- autoShotTime > UnitRangedDamage("player") then
-		flag = flag+1
+		flag = 2
+	elseif GetTime()- autoShotTime > UnitRangedDamage("player") then
+		flag = 1
 	end
 	setSpellFrameColor(flag)
 end
 
-function updateTargetDebuff(unit,debuffCnt)
-	for k, v in pairs(targetDebuffs) do  
-		targetDebuffs[k] = false
-	end 
+function updateTargetDebuff(debuffCnt)
+	local debuffs={}
 	for i=1,debuffCnt,1 do
-		local icon=UnitDebuff(unit,i)
-		if targetDebuffs[iconSpells[icon]] ~= nil then
-			targetDebuffs[iconSpells[icon]] = true
+		local icon=UnitDebuff("target",i)
+		if icon ~= nil then
+			debuffs[icon]=true
 		end
 	end
+	targetDebuffs = debuffs
 end
 
 function updatePlayerBuff(debuffCnt)
-	for k, v in pairs(playerBuffs) do  
-		playerBuffs[k] = false
-	end 
+	local buffs={}
 	for i=1,debuffCnt,1 do
 		local icon=UnitBuff("player",i)
-		if playerBuffs[iconSpells[icon]] ~= nil then
-			playerBuffs[iconSpells[icon]] = true
+		if icon ~= nil then
+			buffs[icon]=true
 		end
 	end
+	playerBuffs = buffs
+end
+
+function updatePlayerDebuff(debuffCnt)
+	local debuffs={}
+	for i=1,debuffCnt,1 do
+		local icon=UnitDebuff("player",i)
+		if icon ~= nil then
+			debuffs[icon]=true
+		end
+	end
+	playerDebuffs=debuffs
+end
+
+function isPlayerBuffExist(buff)
+	if playerBuffs[spellIcons[buff]] ~= nil then
+		return true
+	end
+	return false
+end
+
+function isPlayerDebuffExist(debuff)
+	if playerDebuffs[spellIcons[debuff]] ~= nil then
+		return true
+	end
+	return false
+end
+
+function isTargetDebuffExist(debuff)
+	if targetDebuffs[spellIcons[debuff]] ~= nil then
+		return true
+	end
+	return false
 end
 
 function checkDebuffExisting(unit,debuff,debuffCnt)
@@ -518,20 +666,31 @@ function melee()
 	if spellCooldown["Raptor Strike"] == true then
 		CastSpellByName("Raptor Strike")
 	end
-	if targetDebuffs["Wing Clip"] == false then
+	if isTargetDebuffExist("Wing Clip") == false then
 		CastSpellByName("Wing Clip")
-	end
-	if IsUsableAction(spellSlots["Mongoose Bite"]) == 1 then
+	elseif IsUsableAction(spellSlots["Mongoose Bite"]) == 1 then
 		CastSpellByName("Mongoose Bite")
 	end
+	PetFuck()
 end
 
 function attack()
-	if not UnitExists("target") or UnitIsFriend("player", "target")then
-		SpellStopCasting()
-		TargetLastEnemy()
+	if (not UnitExists("target") or UnitIsFriend("player", "target")) then
+		autoFlag = true
+		if playerClass~="Hunter" then
+			TargetByName(playerName,1)
+		else
+			TargetLastTarget()
+		end
 		return
-	end 
+	end
+	if autoFlag == true then
+		SpellStopCasting()
+		if IsAutoRepeatAction(spellSlots["Auto Shot"]) then
+			return
+		end
+		autoFlag = false
+	end
 	if range == 0 then
 		melee()
 	else
@@ -544,27 +703,47 @@ function attack()
 end
 
 function pvp()
-	if range == 10 and not targetDebuffs["Hunter's Mark"] then
+	if range == 10 and isTargetDebuffExist("Hunter's Mark")==false then
 		CastSpellByName("Hunter's Mark")
-	elseif range ~= 10 and spellCooldown["Rapid Fire"] then
+	elseif range > 1 and spellCooldown["Rapid Fire"] then
 		CastSpellByName("Rapid Fire")
 	end
-	local class = UnitClass("target")
-	shot[class]()
+	shot[playerClass]()
 end
 
 function pve()
+	if range > 1 and spellCooldown["Rapid Fire"] then
+		CastSpellByName("Rapid Fire")
+	end
 	shot["Others"]()
 end
 
+function PetSlay()
+	--if not UnitExists("pet") then
+	--	CastSpellByName("Call Pet")
+	--end
+	for i=1,6,1 do
+		local icon=UnitBuff("pet",i)
+		if icon == "Interface\\Icons\\Ability_Druid_SupriseAttack" then
+			CastSpellByName("Prowl")
+			break
+		end
+	end
+	PetAttack()
+end
 
 function spellFrameUpdate()
+---[[
+	updatePlayerBuff(checkPlayerBuffNum)
+	updatePlayerDebuff(checkPlayerDebuffNum)
 	if(not UnitExists("target")) or UnitIsFriend("player", "target")then
 		hideSight()
 		hideSpellFrame()
+		concussiveFrame:Hide()
 	else
 		if UnitIsPlayer("target") then
 			playerName=UnitName("target")
+			playerClass = UnitClass("target")
 		end
 		local curPosX, curPosY = GetPlayerMapPosition("player");
 		if curPosX ~= posX or curPosY ~= posY then
@@ -576,8 +755,18 @@ function spellFrameUpdate()
 		--
 		updateRange()
 		setSightByRange()
-		updateTargetDebuff("target",checkTargetDebuffNum)
 		updateCooldown()
+		updateTargetDebuff(checkTargetDebuffNum)
+		if isTargetDebuffExist("Concussive Shot") == true then
+			concussiveFrame:Show()
+		else
+			concussiveFrame:Hide()
+		end
+		if isTargetDebuffExist("Scatter Shot") == true then
+			scatterShotFrame:Show()
+		else
+			scatterShotFrame:Hide()
+		end
 		--
 		showSight()
 		--
@@ -586,11 +775,9 @@ function spellFrameUpdate()
 			dotEndTime["Serpent Sting"] = GetTime()+dotDuration["Serpent Sting"]
 		elseif mana - curMana == spellMana["Viper Sting"] then
 			dotEndTime["Viper Sting"] = GetTime()+dotDuration["Viper Sting"]
-		elseif mana - curMana == spellMana["Concussive Shot"] then
-			concussiveFrame:SetWidth(flashSpellFrameMinWidth)
-			concussiveFrame:SetHeight(flashSpellFrameMinHight)
-			concussiveFrame:Show()
 		end
 		mana = curMana
 	end
+	
+--]]
 end
